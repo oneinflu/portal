@@ -1,0 +1,175 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-dm-sans);
+  --font-heading: var(--font-dm-serif);
+  --font-serif: var(--font-dm-serif);
+  
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  
+  /* Radius Scale: 4px steps */
+  --radius-sm: calc(var(--radius) - 8px); /* 4px */
+  --radius-md: calc(var(--radius) - 4px); /* 8px */
+  --radius-lg: var(--radius); /* 12px */
+  --radius-xl: calc(var(--radius) + 4px); /* 16px */
+  --radius-2xl: calc(var(--radius) + 12px); /* 24px */
+}
+
+:root {
+  /* Spacing / Radius */
+  --radius: 0.75rem; /* 12px - Large */
+
+  /* Skillstride Brand Colors */
+  /* Primary: #1A3654 (Deep Blue) */
+  /* Secondary: #206582 (Muted Blue) */
+  /* Accent: #FFDBB8 (Peach Highlight) */
+  /* Neutral: #FDFDFD (Background) */
+  /* Text: #000000 (Black) */
+
+  --background: #FDFDFD;
+  --foreground: #000000;
+
+  --card: #FDFDFD;
+  --card-foreground: #000000;
+
+  --popover: #FDFDFD;
+  --popover-foreground: #000000;
+
+  --primary: #1A3654;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #206582;
+  --secondary-foreground: #FFFFFF;
+
+  --muted: #F2F7F9; /* Very light tint of secondary for muted backgrounds */
+  --muted-foreground: #206582;
+
+  --accent: #FFDBB8;
+  --accent-foreground: #1A3654;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #E0E6EA; /* Light border derived from secondary */
+  --input: #E0E6EA;
+  --ring: #FFDBB8;
+
+  /* Sidebar - Primary Background */
+  --sidebar: #1A3654;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #FFDBB8;
+  --sidebar-primary-foreground: #1A3654;
+  --sidebar-accent: #206582;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #206582;
+  --sidebar-ring: #FFDBB8;
+
+  /* Charts */
+  --chart-1: #1A3654;
+  --chart-2: #206582;
+  --chart-3: #FFDBB8;
+  --chart-4: #F2F7F9;
+  --chart-5: #000000;
+}
+
+.dark {
+  /* Dark Mode Palette */
+  --background: #1A3654; /* Primary Deep Blue as background */
+  --foreground: #FDFDFD;
+
+  --card: #206582; /* Secondary Muted Blue as card surface */
+  --card-foreground: #FDFDFD;
+
+  --popover: #206582;
+  --popover-foreground: #FDFDFD;
+
+  --primary: #FFDBB8; /* Accent as Primary for visibility */
+  --primary-foreground: #1A3654;
+
+  --secondary: #1A3654; /* Background color for secondary elements */
+  --secondary-foreground: #FDFDFD;
+
+  --muted: #13283F; /* Darker shade of primary? Or just Primary? */
+  --muted-foreground: #FFDBB8;
+
+  --accent: #FFDBB8;
+  --accent-foreground: #1A3654;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #206582;
+  --input: #206582;
+  --ring: #FFDBB8;
+
+  /* Sidebar Dark - Same as Light or adjusted */
+  --sidebar: #0D1B2A; /* Deeper blue if possible, or just #1A3654 */
+  --sidebar: #1A3654;
+  --sidebar-foreground: #FDFDFD;
+  --sidebar-primary: #FFDBB8;
+  --sidebar-primary-foreground: #1A3654;
+  --sidebar-accent: #206582;
+  --sidebar-accent-foreground: #FDFDFD;
+  --sidebar-border: #206582;
+  --sidebar-ring: #FFDBB8;
+  
+  --chart-1: #FFDBB8;
+  --chart-2: #206582;
+  --chart-3: #1A3654;
+  --chart-4: #FDFDFD;
+  --chart-5: #FFFFFF;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  ::selection {
+    @apply bg-accent text-accent-foreground;
+  }
+  h1, h2, h3 {
+    @apply font-heading font-normal text-primary;
+  }
+  h4, h5, h6 {
+    @apply font-sans font-bold text-foreground;
+  }
+}
