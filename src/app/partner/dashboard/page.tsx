@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import * as React from "react"
@@ -23,86 +24,57 @@ import { isWithinInterval, parseISO, subDays, format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 
+import { Enrollment } from "@/lib/store"
+
 export default function PartnerDashboardPage() {
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
   })
 
-  // Mock Data for Recent Enrollments
-  const allEnrollments = [
-    {
-      id: "ENR-001",
-      name: "Alice Walker",
-      email: "alice.w@example.com",
-      joined: "2026-02-23",
-      package: "Premium Bundle",
-      plan: "Annual",
-      commissionRate: 20,
-      paidAmount: 1200,
-      commission: 240,
-    },
-    {
-      id: "ENR-002",
-      name: "Bob Martin",
-      email: "bob.m@example.com",
-      joined: "2026-02-20",
-      package: "Standard Pack",
-      plan: "Monthly",
-      commissionRate: 15,
-      paidAmount: 100,
-      commission: 15,
-    },
-    {
-      id: "ENR-003",
-      name: "Charlie Davis",
-      email: "charlie.d@example.com",
-      joined: "2026-02-18",
-      package: "Premium Bundle",
-      plan: "Annual",
-      commissionRate: 20,
-      paidAmount: 1200,
-      commission: 240,
-    },
-    {
-      id: "ENR-004",
-      name: "Diana Evans",
-      email: "diana.e@example.com",
-      joined: "2026-02-15",
-      package: "Basic Starter",
-      plan: "Monthly",
-      commissionRate: 10,
-      paidAmount: 50,
-      commission: 5,
-    },
-    {
-      id: "ENR-005",
-      name: "Ethan Harris",
-      email: "ethan.h@example.com",
-      joined: "2026-02-10",
-      package: "Standard Pack",
-      plan: "Annual",
-      commissionRate: 15,
-      paidAmount: 1000,
-      commission: 150,
-    },
-  ]
+  const [stats, setStats] = React.useState({
+    lifetimeEarnings: 0,
+    totalReceived: 0,
+    totalToBeReceived: 0,
+  })
+  const [enrollments, setEnrollments] = React.useState<Enrollment[]>([])
+  const [loading, setLoading] = React.useState(true)
+
+
+  React.useEffect(() => {
+
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const [statsRes, enrollmentsRes] = await Promise.all([
+          fetch('/api/partner/stats'),
+          fetch('/api/partner/enrollments')
+        ])
+        
+        const statsData = await statsRes.json()
+        const enrollmentsData = await enrollmentsRes.json()
+        
+        setStats(statsData)
+        setEnrollments(enrollmentsData)
+      } catch (error) {
+        console.error("Failed to fetch dashboard data", error)
+        toast.error("Failed to load dashboard data")
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchData()
+  }, [])
 
   // Filter Logic
   const filteredEnrollments = React.useMemo(() => {
-    if (!date?.from || !date?.to) return allEnrollments
-    return allEnrollments.filter((enrollment) => {
+    if (!date?.from || !date?.to) return enrollments
+    return enrollments.filter((enrollment) => {
       const joinedDate = parseISO(enrollment.joined)
       return isWithinInterval(joinedDate, { start: date.from!, end: date.to! })
     })
-  }, [date, allEnrollments])
-
-  // KPI Calculations
-  const totalEnrollments = filteredEnrollments.length
-  const totalCommissionEarned = filteredEnrollments.reduce((acc, curr) => acc + curr.commission, 0)
-  // Mocking "To be received" as 20% of total earned for demonstration, or could be a separate field in real data
-  const totalCommissionToBeReceived = totalCommissionEarned * 0.2 
-  const totalPaymentReceived = totalCommissionEarned - totalCommissionToBeReceived
+  }, [date, enrollments])
 
   return (
     <div className="space-y-6">
@@ -145,44 +117,32 @@ export default function PartnerDashboardPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Enrollments
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalEnrollments}</div>
-            <p className="text-xs text-muted-foreground">
-              Students enrolled via your link
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Payment Received
-            </CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalPaymentReceived.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              Commission already paid out
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Payment Pending
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Lifetime Earnings</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalCommissionToBeReceived.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              Commission to be received
-            </p>
+            <div className="text-2xl font-bold">${stats.lifetimeEarnings.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Total earnings processed + pending</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Received</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">${stats.totalReceived.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Amount successfully paid out</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">To Be Received</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">${stats.totalToBeReceived.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Pending commissions</p>
           </CardContent>
         </Card>
       </div>

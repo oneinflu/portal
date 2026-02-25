@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -9,9 +10,49 @@ import { ModeToggle } from "@/components/mode-toggle";
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function PartnerSignupPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState<string>();
+  const [location, setLocation] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          phone: phoneNumber,
+          location,
+          password
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Signup failed");
+      }
+
+      toast.success("Account created successfully!");
+      router.push("/partner/dashboard");
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full lg:grid h-screen lg:grid-cols-2 relative">
@@ -26,7 +67,7 @@ export default function PartnerSignupPage() {
               Create an account to start earning commissions
             </p>
           </div>
-          <div className="grid gap-4">
+          <form onSubmit={handleSignup} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
@@ -34,6 +75,8 @@ export default function PartnerSignupPage() {
                 type="text"
                 placeholder="John Doe"
                 required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
@@ -43,6 +86,8 @@ export default function PartnerSignupPage() {
                 type="email"
                 placeholder="partner@example.com"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
@@ -63,21 +108,27 @@ export default function PartnerSignupPage() {
                 type="text"
                 placeholder="City, Country"
                 required
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required />
+              <Input 
+                id="password" 
+                type="password" 
+                required 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-            <Link href="/partner/dashboard">
-              <Button type="submit" className="w-full">
-                Create Account
-              </Button>
-            </Link>
-            <Button variant="outline" className="w-full">
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Creating Account..." : "Create Account"}
+            </Button>
+            <Button variant="outline" type="button" className="w-full">
               Sign up with Google
             </Button>
-          </div>
+          </form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
             <Link href="/partner/login" className="underline">
@@ -98,7 +149,6 @@ export default function PartnerSignupPage() {
               <p className="text-lg">
                 &ldquo;Join our global network of partners and grow your business with our industry-leading referral program.&rdquo;
               </p>
-              <footer className="text-sm">Partner Success Team</footer>
             </blockquote>
           </div>
         </div>

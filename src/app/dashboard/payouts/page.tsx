@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -90,7 +90,8 @@ const initialData: Payout[] = [
 ]
 
 export default function PayoutsPage() {
-  const [data, setData] = useState<Payout[]>(initialData)
+  const [data, setData] = useState<Payout[]>([])
+  const [loading, setLoading] = useState(true)
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -100,6 +101,44 @@ export default function PayoutsPage() {
     from: subDays(new Date(), 30),
     to: new Date(),
   })
+
+  async function fetchData() {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/admin/payouts')
+      const payouts = await response.json()
+      // Map API response to Payout type if needed, but it should match
+      const formattedPayouts = payouts.map((p: {
+        affiliateId: string
+        name: string
+        email: string
+        phone: string
+        enrollmentsCount: number
+        totalPayable: number
+        status: "pending" | "paid"
+        date: string
+      }) => ({
+        id: p.affiliateId,
+        name: p.name,
+        email: p.email,
+        phone: p.phone,
+        enrollmentsCount: p.enrollmentsCount,
+        totalPayable: p.totalPayable,
+        status: p.status,
+        date: p.date,
+      }))
+      setData(formattedPayouts)
+    } catch (error) {
+      console.error("Failed to fetch payouts", error)
+      toast.error("Failed to load payouts")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   // Filter Logic
   const filteredData = useMemo(() => {
@@ -195,9 +234,13 @@ export default function PayoutsPage() {
         return (
           <div className="text-right">
             <PayModal 
+              affiliateId={payout.id}
               affiliateName={payout.name} 
               totalPayable={payout.totalPayable}
-              onPaymentComplete={() => handlePaymentComplete(payout.id)}
+              onPaymentComplete={() => {
+                handlePaymentComplete(payout.id)
+                fetchData() // Refresh data
+              }}
             />
           </div>
         )

@@ -1,11 +1,48 @@
+
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, type: "admin" }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      toast.success("Login successful!");
+      router.push("/dashboard");
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-full lg:grid h-screen lg:grid-cols-2 relative">
       <div className="absolute top-4 right-4 z-50">
@@ -19,43 +56,34 @@ export default function LoginPage() {
               Enter your email below to login to your account
             </p>
           </div>
-          <div className="grid gap-4">
+          <form onSubmit={handleLogin} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="admin@skillstrideacademy.com"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="ml-auto inline-block text-sm underline"
-                >
-                  Forgot your password?
-                </Link>
               </div>
-              <Input id="password" type="password" required />
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-            <Link href="/dashboard">
-              <Button type="submit" className="w-full">
-                Continue
-              </Button>
-            </Link>
-            <Button variant="outline" className="w-full">
-              Login with Google
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Logging in..." : "Continue"}
             </Button>
-          </div>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Link href="#" className="underline">
-              Sign up
-            </Link>
-          </div>
+          </form>
         </div>
       </div>
       <div className="hidden bg-muted lg:block relative h-full">

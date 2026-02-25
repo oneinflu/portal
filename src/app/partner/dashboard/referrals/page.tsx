@@ -36,60 +36,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { AddReferralModal } from "./add-referral-modal"
-
-// Mock Data Type
-export type Referral = {
-  id: string
-  name: string
-  email: string
-  phone: string
-  status: "pending" | "enrolled"
-  dateAdded: string
-}
-
-// Mock Data
-const data: Referral[] = [
-  {
-    id: "REF-001",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    status: "pending",
-    dateAdded: "2026-02-24",
-  },
-  {
-    id: "REF-002",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    phone: "+44 20 7123 4567",
-    status: "enrolled",
-    dateAdded: "2026-02-20",
-  },
-  {
-    id: "REF-003",
-    name: "Michael Johnson",
-    email: "michael.j@example.com",
-    phone: "+61 2 9876 5432",
-    status: "pending",
-    dateAdded: "2026-02-18",
-  },
-  {
-    id: "REF-004",
-    name: "Emily Davis",
-    email: "emily.d@example.com",
-    phone: "+1 (555) 987-6543",
-    status: "enrolled",
-    dateAdded: "2026-02-15",
-  },
-  {
-    id: "REF-005",
-    name: "David Wilson",
-    email: "david.w@example.com",
-    phone: "+49 30 12345678",
-    status: "pending",
-    dateAdded: "2026-02-10",
-  },
-]
+import { Referral } from "@/lib/store"
 
 export const columns: ColumnDef<Referral>[] = [
   {
@@ -177,13 +124,29 @@ export const columns: ColumnDef<Referral>[] = [
 
 export default function ReferralsPage() {
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  )
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
+  const [data, setData] = React.useState<Referral[]>([])
+  const [loading, setLoading] = React.useState(true)
+
+  const fetchReferrals = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/partner/referrals')
+      const json = await res.json()
+      setData(json)
+    } catch (error) {
+      console.error("Failed to fetch referrals", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    fetchReferrals()
+  }, [fetchReferrals])
 
   const table = useReactTable({
     data,
@@ -207,17 +170,17 @@ export default function ReferralsPage() {
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">My Referrals</h1>
+        <h2 className="text-3xl font-bold tracking-tight">My Referrals</h2>
         <Button onClick={() => setIsAddModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> Add Referral
         </Button>
       </div>
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter by email..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          placeholder="Filter by name..."
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
+            table.getColumn("name")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
@@ -291,7 +254,7 @@ export default function ReferralsPage() {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {loading ? "Loading..." : "No results."}
                 </TableCell>
               </TableRow>
             )}
@@ -299,6 +262,10 @@ export default function ReferralsPage() {
         </Table>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
         <div className="space-x-2">
           <Button
             variant="outline"
@@ -318,7 +285,11 @@ export default function ReferralsPage() {
           </Button>
         </div>
       </div>
-      <AddReferralModal open={isAddModalOpen} onOpenChange={setIsAddModalOpen} />
+      <AddReferralModal 
+        open={isAddModalOpen} 
+        onOpenChange={setIsAddModalOpen}
+        onSuccess={fetchReferrals}
+      />
     </div>
   )
 }

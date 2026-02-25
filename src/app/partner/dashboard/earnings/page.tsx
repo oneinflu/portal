@@ -41,6 +41,8 @@ import { DateRange } from "react-day-picker"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TransactionDetailsModal } from "./transaction-details-modal"
 
+import { Enrollment } from "@/lib/store" // Import Enrollment type
+
 // Transaction Type
 export type Transaction = {
   id: string
@@ -54,77 +56,61 @@ export type Transaction = {
   enrollmentIds: string[] // IDs of enrollments covered by this payout
 }
 
-// Mock Data
-const allTransactions: Transaction[] = [
-  {
-    id: "PAY-001",
-    transactionDate: "2026-02-20T10:00:00",
-    amount: 500.00,
-    currency: "USD",
-    paymentMethod: "Bank Transfer",
-    transactionId: "BANK_REF_12345",
-    status: "Completed",
-    paymentProofUrl: "/proofs/pay-001.pdf",
-    enrollmentIds: ["ENR-2024-001", "ENR-2024-002"],
-  },
-  {
-    id: "PAY-002",
-    transactionDate: "2026-02-15T14:30:00",
-    amount: 150.00,
-    currency: "USD",
-    paymentMethod: "PayPal",
-    transactionId: "PP_REF_67890",
-    status: "Completed",
-    enrollmentIds: ["ENR-2024-005"],
-  },
-  {
-    id: "PAY-003",
-    transactionDate: "2026-01-28T09:15:00",
-    amount: 240.00,
-    currency: "USD",
-    paymentMethod: "Stripe",
-    transactionId: "ch_1234567890",
-    status: "Completed",
-    enrollmentIds: ["ENR-2024-003"],
-  },
-]
-
 export default function EarningsPage() {
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
   })
   
+  const [transactions, setTransactions] = React.useState<Transaction[]>([])
+  const [enrollments, setEnrollments] = React.useState<Enrollment[]>([])
+  const [stats, setStats] = React.useState({
+    lifetimeEarnings: 0,
+    totalReceived: 0,
+    totalToBeReceived: 0
+  })
+  const [loading, setLoading] = React.useState(true)
+
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
 
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const [transactionsRes, statsRes, enrollmentsRes] = await Promise.all([
+          fetch('/api/partner/earnings'),
+          fetch('/api/partner/stats'),
+          fetch('/api/partner/enrollments')
+        ])
+        
+        const transactionsData = await transactionsRes.json()
+        const statsData = await statsRes.json()
+        const enrollmentsData = await enrollmentsRes.json()
+        
+        setTransactions(transactionsData)
+        setStats(statsData)
+        setEnrollments(enrollmentsData)
+      } catch (error) {
+        console.error("Failed to fetch earnings data", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
   // Filter Transactions by Date
   const filteredTransactions = React.useMemo(() => {
-    if (!date?.from || !date?.to) return allTransactions
-    return allTransactions.filter((transaction) => {
+    if (!date?.from || !date?.to) return transactions
+    return transactions.filter((transaction) => {
       const transactionDate = parseISO(transaction.transactionDate)
       return isWithinInterval(transactionDate, { start: date.from!, end: date.to! })
     })
-  }, [date])
+  }, [date, transactions])
 
-  // KPI Calculations (based on filtered data or lifetime?)
-  // Usually KPIs show lifetime unless specified "in this period"
-  // Let's do Lifetime for "Lifetime Earnings" and Filtered for others if needed, but typically dashboard summaries are global or filtered.
-  // The user asked for "Lifetime Earnings", "Total Received", "Total To Be Received".
-  // "Lifetime Earnings" = Total Commission Earned (Paid + Pending)
-  // "Total Received" = Total Paid
-  // "Total To Be Received" = Total Pending (We need enrollment data for this, but let's mock it or derive from transactions + mock pending)
-  
-  // For this page, we only have Completed transactions in the table (Payments Received).
-  // We can sum up the transactions for "Total Received".
-  const totalReceived = allTransactions
-    .filter(t => t.status === "Completed")
-    .reduce((sum, t) => sum + t.amount, 0)
+  const { lifetimeEarnings, totalReceived, totalToBeReceived } = stats
 
-  // Mocking "To Be Received" since it comes from Enrollments not yet in a Payout Transaction
-  const totalToBeReceived = 350.00 
-  
-  const lifetimeEarnings = totalReceived + totalToBeReceived
 
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -380,6 +366,7 @@ export default function EarningsPage() {
             open={isDetailsOpen} 
             onOpenChange={setIsDetailsOpen} 
             transaction={selectedTransaction}
+            allEnrollments={enrollments}
         />
       )}
     </div>

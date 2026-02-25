@@ -1,11 +1,48 @@
+
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Handshake } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function PartnerLoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, type: "partner" }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      toast.success("Login successful!");
+      router.push("/partner/dashboard");
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-full lg:grid h-screen lg:grid-cols-2 relative">
       <div className="absolute top-4 right-4 z-50">
@@ -19,7 +56,7 @@ export default function PartnerLoginPage() {
               Enter your email below to login to your account
             </p>
           </div>
-          <div className="grid gap-4">
+          <form onSubmit={handleLogin} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -27,6 +64,8 @@ export default function PartnerLoginPage() {
                 type="email"
                 placeholder="partner@example.com"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
@@ -39,17 +78,18 @@ export default function PartnerLoginPage() {
                   Forgot your password?
                 </Link>
               </div>
-              <Input id="password" type="password" required />
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-            <Link href="/partner/dashboard">
-              <Button type="submit" className="w-full">
-                Continue
-              </Button>
-            </Link>
-            <Button variant="outline" className="w-full">
-              Login with Google
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Logging in..." : "Continue"}
             </Button>
-          </div>
+          </form>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
             <Link href="/partner/signup" className="underline">

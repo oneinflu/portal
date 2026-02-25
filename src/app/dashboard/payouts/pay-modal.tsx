@@ -26,12 +26,13 @@ import { CurrencyDisplay } from "@/components/currency-display"
 import { toast } from "sonner"
 
 interface PayModalProps {
+  affiliateId: string
   affiliateName: string
   totalPayable: number
   onPaymentComplete: () => void
 }
 
-export function PayModal({ affiliateName, totalPayable, onPaymentComplete }: PayModalProps) {
+export function PayModal({ affiliateId, affiliateName, totalPayable, onPaymentComplete }: PayModalProps) {
   const [open, setOpen] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -39,20 +40,47 @@ export function PayModal({ affiliateName, totalPayable, onPaymentComplete }: Pay
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    
-    setIsLoading(false)
-    setIsSuccess(true)
-    
-    // Show success message after animation plays a bit
-    setTimeout(() => {
-      toast.success(`Payment to ${affiliateName} processed successfully!`)
-      setOpen(false)
-      setIsSuccess(false) // Reset for next time
-      onPaymentComplete()
-    }, 2000)
+
+    const formData = new FormData(e.target as HTMLFormElement)
+    const date = formData.get("date") as string
+    const transactionId = formData.get("transactionId") as string
+    const paymentMethod = formData.get("paymentMethod") as string
+    // In a real app, handle file upload for proof
+
+    try {
+      const response = await fetch('/api/admin/payouts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          affiliateId,
+          amount: totalPayable,
+          transactionId,
+          paymentMethod,
+          date,
+          // proofUrl: ... 
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Payment failed')
+      }
+
+      setIsLoading(false)
+      setIsSuccess(true)
+      
+      // Show success message after animation plays a bit
+      setTimeout(() => {
+        toast.success(`Payment to ${affiliateName} processed successfully!`)
+        setOpen(false)
+        setIsSuccess(false) // Reset for next time
+        onPaymentComplete()
+      }, 2000)
+    } catch (error) {
+      toast.error("Failed to process payment")
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -90,7 +118,8 @@ export function PayModal({ affiliateName, totalPayable, onPaymentComplete }: Pay
                   Date
                 </Label>
                 <Input
-                  id="payment-date"
+                  id="date"
+                  name="date"
                   type="date"
                   required
                   className="col-span-3"
@@ -98,29 +127,29 @@ export function PayModal({ affiliateName, totalPayable, onPaymentComplete }: Pay
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="transaction-id" className="text-right">
+                <Label htmlFor="transactionId" className="text-right">
                   Txn ID
                 </Label>
                 <Input
-                  id="transaction-id"
+                  id="transactionId"
+                  name="transactionId"
                   placeholder="TRX123456789"
                   required
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="payment-mode" className="text-right">
+                <Label htmlFor="paymentMethod" className="text-right">
                   Mode
                 </Label>
-                <Select required defaultValue="bank_transfer">
+                <Select required defaultValue="Bank Transfer" name="paymentMethod">
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select payment mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="upi">UPI</SelectItem>
-                    <SelectItem value="cheque">Cheque</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="PayPal">PayPal</SelectItem>
+                    <SelectItem value="Stripe">Stripe</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

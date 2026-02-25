@@ -19,26 +19,19 @@ import { Badge } from "@/components/ui/badge"
 import { Transaction } from "./page"
 import { format, parseISO } from "date-fns"
 
+import { Enrollment } from "@/lib/store" // Import Enrollment
+
 interface TransactionDetailsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   transaction: Transaction
+  allEnrollments: Enrollment[]
 }
 
-// Mock Enrollment Data for Details
-const mockEnrollmentDetails = {
-    "ENR-2024-001": { name: "Alice Walker", package: "Premium Bundle", amount: 240.00, date: "2026-02-23" },
-    "ENR-2024-002": { name: "Bob Martin", package: "Standard Pack", amount: 15.00, date: "2026-02-20" },
-    "ENR-2024-003": { name: "Charlie Davis", package: "Premium Bundle", amount: 240.00, date: "2026-02-18" },
-    "ENR-2024-005": { name: "Ethan Harris", package: "Standard Pack", amount: 150.00, date: "2026-02-10" },
-}
-
-export function TransactionDetailsModal({ open, onOpenChange, transaction }: TransactionDetailsModalProps) {
+export function TransactionDetailsModal({ open, onOpenChange, transaction, allEnrollments }: TransactionDetailsModalProps) {
   
-  const enrollments = transaction.enrollmentIds.map(id => ({
-      id,
-      ...mockEnrollmentDetails[id as keyof typeof mockEnrollmentDetails]
-  })).filter(e => e.name) // Filter out undefined if ID not found in mock
+  const enrollments = allEnrollments.filter(e => transaction.enrollmentIds.includes(e.id))
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -88,8 +81,8 @@ export function TransactionDetailsModal({ open, onOpenChange, transaction }: Tra
                                 <TableCell className="font-mono text-xs">{enrollment.id}</TableCell>
                                 <TableCell>{enrollment.name}</TableCell>
                                 <TableCell>{enrollment.package}</TableCell>
-                                <TableCell>{format(parseISO(enrollment.date), "MMM dd, yyyy")}</TableCell>
-                                <TableCell className="text-right font-medium">${enrollment.amount.toFixed(2)}</TableCell>
+                                <TableCell>{format(parseISO(enrollment.joined), "MMM dd, yyyy")}</TableCell>
+                                <TableCell className="text-right font-medium">${enrollment.commission.toFixed(2)}</TableCell>
                             </TableRow>
                         ))}
                         <TableRow>

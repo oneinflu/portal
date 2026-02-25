@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   ColumnFiltersState,
   SortingState,
@@ -35,45 +35,9 @@ import { Download, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 import { columns, Enrollment } from "./columns"
 
-// Mock Data Generation
-const generateMockData = (count: number): Enrollment[] => {
-  const courses = ["Full Stack Web Dev", "Data Science", "UI/UX Design", "Digital Marketing"]
-  const plans = ["Premium", "Standard", "Basic"]
-  const packages = ["Annual", "Monthly", "Quarterly"]
-  
-  return Array.from({ length: count }).map((_, i) => {
-    const amountPaid = (Math.floor(Math.random() * 20) + 5) * 50 // $250 - $1250
-    const commissionRate = Math.floor(Math.random() * 15) + 5 // 5% - 20%
-    const payoutAmount = (amountPaid * commissionRate) / 100
-    const netRevenue = amountPaid - payoutAmount
-    const isPaid = Math.random() > 0.3
-    
-    // Generate random date within last 60 days
-    const date = new Date(Date.now() - Math.floor(Math.random() * 60) * 24 * 60 * 60 * 1000)
-    // Add random time
-    date.setHours(Math.floor(Math.random() * 24))
-    date.setMinutes(Math.floor(Math.random() * 60))
-
-    return {
-      id: `ENR-${1000 + i}`,
-      affiliateName: `Affiliate ${Math.floor(Math.random() * 20) + 1}`,
-      affiliateId: `AFF-${100 + Math.floor(Math.random() * 20) + 1}`,
-      studentName: `Student ${i + 1}`,
-      course: courses[Math.floor(Math.random() * courses.length)],
-      package: packages[Math.floor(Math.random() * packages.length)],
-      plan: plans[Math.floor(Math.random() * plans.length)],
-      amountPaid,
-      commissionRate,
-      payoutAmount,
-      netRevenue,
-      isPaidToAffiliate: isPaid,
-      enrollmentDate: date.toISOString(),
-    }
-  })
-}
-
 export default function EnrollmentsPage() {
-  const [data] = useState<Enrollment[]>(generateMockData(100))
+  const [data, setData] = useState<Enrollment[]>([])
+  const [loading, setLoading] = useState(true)
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -83,6 +47,21 @@ export default function EnrollmentsPage() {
     from: subDays(new Date(), 30),
     to: new Date(),
   })
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch('/api/admin/enrollments')
+        const enrollments = await response.json()
+        setData(enrollments)
+      } catch (error) {
+        console.error("Failed to fetch enrollments", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   // Filter Logic
   const filteredData = useMemo(() => {
@@ -146,6 +125,10 @@ export default function EnrollmentsPage() {
     link.click()
     document.body.removeChild(link)
     toast.success("Enrollments report downloaded successfully")
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-full">Loading...</div>
   }
 
   return (

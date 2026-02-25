@@ -28,19 +28,32 @@ Best regards,
 Admin Team`)
   
   const [showSuccess, setShowSuccess] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!name || !email) {
       toast.error("Please fill in name and email")
       return
     }
     
-    // Simulate sending
-    setTimeout(() => {
-        setShowSuccess(true)
-        setName("")
-        setEmail("")
-    }, 500)
+    setLoading(true)
+    try {
+      const response = await fetch('/api/admin/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, subject, content }),
+      })
+
+      if (!response.ok) throw new Error('Failed to send invitation')
+
+      setShowSuccess(true)
+      setName("")
+      setEmail("")
+    } catch (error) {
+      toast.error("Failed to send invitation")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -110,9 +123,9 @@ Admin Team`)
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button onClick={handleSend} className="w-full md:w-auto">
+            <Button onClick={handleSend} className="w-full md:w-auto" disabled={loading}>
               <Send className="mr-2 h-4 w-4" />
-              Send Invitation
+              {loading ? "Sending..." : "Send Invitation"}
             </Button>
           </CardFooter>
         </Card>

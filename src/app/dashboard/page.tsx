@@ -23,6 +23,7 @@ import { DateRange } from "react-day-picker"
 import { isWithinInterval, parseISO, subDays } from "date-fns"
 import { CurrencyDisplay } from "@/components/currency-display"
 import { useCurrency } from "@/hooks/use-currency"
+import { Affiliate } from "@/lib/store"
 
 export default function DashboardPage() {
   const { rate, loading } = useCurrency()
@@ -31,79 +32,57 @@ export default function DashboardPage() {
     to: new Date(),
   })
 
-  // Mock Data for Recent Affiliates with dates for filtering
-  // Using dates relative to "Today" (2026-02-24) to ensure data shows up
-  const allAffiliates = [
-    {
-      id: "AFF-001",
-      name: "Liam Johnson",
-      email: "liam.j@example.com",
-      status: "Accepted",
-      joined: "2026-02-23", // Yesterday
-      amount: 300,
-    },
-    {
-      id: "AFF-002",
-      name: "Olivia Smith",
-      email: "olivia.smith@example.com",
-      status: "Pending",
-      joined: "2026-02-20",
-      amount: 180,
-    },
-    {
-      id: "AFF-003",
-      name: "Noah Williams",
-      email: "noah.williams@example.com",
-      status: "Accepted",
-      joined: "2026-02-15",
-      amount: 420,
-    },
-    {
-      id: "AFF-004",
-      name: "Emma Brown",
-      email: "emma.brown@example.com",
-      status: "Accepted",
-      joined: "2026-01-28", // Last month
-      amount: 550,
-    },
-    {
-      id: "AFF-005",
-      name: "James Jones",
-      email: "james.jones@example.com",
-      status: "Pending",
-      joined: "2026-02-10",
-      amount: 0,
-    },
-    {
-      id: "AFF-006",
-      name: "Sophia Garcia",
-      email: "sophia.g@example.com",
-      status: "Accepted",
-      joined: "2026-02-24", // Today
-      amount: 145,
-    },
-    {
-        id: "AFF-007",
-        name: "Lucas Miller",
-        email: "lucas.m@example.com",
-        status: "Pending",
-        joined: "2025-12-15", // Old
-        amount: 60,
+  const [affiliates, setAffiliates] = React.useState<Affiliate[]>([])
+  const [stats, setStats] = React.useState({
+    totalPartners: 0,
+    totalRevenue: 0,
+    activeStudents: 0
+  })
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true)
+        const [partnersRes, statsRes] = await Promise.all([
+          fetch('/api/admin/partners'),
+          fetch('/api/admin/stats')
+        ])
+        
+        const partnersData = await partnersRes.json()
+        const statsData = await statsRes.json()
+        
+        setAffiliates(partnersData)
+        setStats(statsData)
+      } catch (error) {
+        console.error("Failed to fetch admin dashboard data", error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ]
+    fetchData()
+  }, [])
 
   // Filter Logic
   const filteredAffiliates = React.useMemo(() => {
-    if (!date?.from || !date?.to) return allAffiliates
-    return allAffiliates.filter((affiliate) => {
+    if (!date?.from || !date?.to) return affiliates
+    return affiliates.filter((affiliate) => {
       const joinedDate = parseISO(affiliate.joined)
       return isWithinInterval(joinedDate, { start: date.from!, end: date.to! })
     })
-  }, [date, allAffiliates])
+  }, [date, affiliates])
 
   // KPI Calculations based on filtered data
   const totalAffiliates = filteredAffiliates.length
-  const activeUsers = totalAffiliates * 12 // Mock multiplier
+  // For Active Users, we use the global stats if no filter, or approximate
+  // But let's just use the stats from API for global view, or keep the mock multiplier logic if per-affiliate data is needed?
+  // The API stats.activeStudents is global.
+  // Let's use the API stats for global context, but if we filter by date, it's hard to filter "active students" without enrollment data.
+  // For now, let's use the API stats for "Active Users Enrolled" but maybe scale it if needed? 
+  // Actually, the previous mock was `totalAffiliates * 12`.
+  // Let's use stats.activeStudents for the global count.
+  const activeUsers = stats.activeStudents 
+  
   const pendingPayouts = filteredAffiliates
     .filter(a => a.status === "Pending")
     .reduce((acc, curr) => acc + curr.amount, 0)
@@ -121,7 +100,7 @@ export default function DashboardPage() {
     {
       title: "Active Users Enrolled",
       value: activeUsers.toLocaleString(),
-      description: "Estimated based on affiliates",
+      description: "Total active students",
       icon: UserCheck,
     },
     {

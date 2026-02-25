@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -42,33 +42,15 @@ type Transaction = {
   affiliateName: string
   email: string
   amount: number
-  paymentMode: "Bank Transfer" | "UPI" | "Cheque" | "Cash"
+  paymentMode: string
   enrollmentsCount: number
   proofUrl: string
   status: "Success" | "Processing" | "Failed"
 }
 
-// Mock data
-const initialData: Transaction[] = Array.from({ length: 50 }).map((_, i) => {
-  const date = new Date(Date.now() - Math.floor(Math.random() * 60) * 24 * 60 * 60 * 1000)
-  // Mostly Success to reflect "payouts we done"
-  const status = Math.random() > 0.2 ? "Success" : (Math.random() > 0.5 ? "Processing" : "Failed")
-  
-  return {
-    id: `TRX-${1000 + i}`,
-    date: date.toISOString().split('T')[0],
-    affiliateName: `Affiliate ${i + 1}`,
-    email: `affiliate${i + 1}@example.com`,
-    amount: (Math.floor(Math.random() * 20) + 1) * 50, // Changed to reflect USD values
-    paymentMode: ["Bank Transfer", "UPI", "Cheque", "Cash"][Math.floor(Math.random() * 4)] as Transaction["paymentMode"],
-    enrollmentsCount: Math.floor(Math.random() * 15) + 1,
-    proofUrl: "#",
-    status: status as Transaction["status"],
-  }
-})
-
 export default function TransactionsPage() {
-  const [data, setData] = useState<Transaction[]>(initialData)
+  const [data, setData] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -78,6 +60,21 @@ export default function TransactionsPage() {
     from: subDays(new Date(), 30),
     to: new Date(),
   })
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch('/api/admin/transactions')
+        const transactions = await response.json()
+        setData(transactions)
+      } catch (error) {
+        console.error("Failed to fetch transactions", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   // Filter Logic
   const filteredData = useMemo(() => {
@@ -224,6 +221,10 @@ export default function TransactionsPage() {
       rowSelection,
     },
   })
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-full">Loading...</div>
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

@@ -20,9 +20,10 @@ import { toast } from "sonner"
 interface AddReferralModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-export function AddReferralModal({ open, onOpenChange }: AddReferralModalProps) {
+export function AddReferralModal({ open, onOpenChange, onSuccess }: AddReferralModalProps) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState<string>()
@@ -32,17 +33,32 @@ export function AddReferralModal({ open, onOpenChange }: AddReferralModalProps) 
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const response = await fetch('/api/partner/referrals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, phone }),
+      })
 
-    toast.success("Referral added successfully")
-    setIsLoading(false)
-    onOpenChange(false)
-    
-    // Reset form
-    setName("")
-    setEmail("")
-    setPhone(undefined)
+      if (!response.ok) {
+        throw new Error('Failed to add referral')
+      }
+
+      toast.success("Referral added successfully")
+      onSuccess?.()
+      onOpenChange(false)
+      
+      // Reset form
+      setName("")
+      setEmail("")
+      setPhone(undefined)
+    } catch (error) {
+      toast.error("Failed to add referral")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
