@@ -25,7 +25,7 @@ export type Affiliate = {
   phone: string
   referralCode: string
   acceptedTerms: boolean
-  joinedDate: string
+  joined: string
   enrollments: number
   payoutBalance: number
   totalPaid: number
@@ -67,7 +67,7 @@ export const columns: ColumnDef<Affiliate>[] = [
     },
   },
   {
-    accessorKey: "joinedDate",
+    accessorKey: "joined",
     header: ({ column }) => {
         return (
           <Button
@@ -80,7 +80,7 @@ export const columns: ColumnDef<Affiliate>[] = [
         )
       },
     cell: ({ row }) => {
-        const dateStr = row.getValue("joinedDate") as string
+        const dateStr = row.getValue("joined") as string
         let date
         try {
             date = parseISO(dateStr)

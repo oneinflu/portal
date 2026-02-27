@@ -64,7 +64,7 @@ export const activeColumns: ColumnDef<Affiliate>[] = [
     },
   },
   {
-    accessorKey: "joinedDate",
+    accessorKey: "joined",
     header: ({ column }) => {
         return (
           <Button
@@ -77,7 +77,7 @@ export const activeColumns: ColumnDef<Affiliate>[] = [
         )
       },
     cell: ({ row }) => {
-        const date = parseISO(row.getValue("joinedDate"))
+        const date = parseISO(row.getValue("joined"))
         return (
           <div className="text-center flex flex-col">
             <span className="font-medium">{format(date, "MMM dd, yyyy")}</span>

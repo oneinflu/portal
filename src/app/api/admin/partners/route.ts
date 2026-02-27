@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { NextResponse } from 'next/server';
@@ -50,6 +51,31 @@ export async function GET() {
     });
 
     return NextResponse.json(enrichedAffiliates);
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  await dbConnect();
+  try {
+    const { id, status } = await req.json();
+
+    if (!id || !status) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const affiliate = await Affiliate.findByIdAndUpdate(
+      id, 
+      { status }, 
+      { new: true }
+    );
+
+    if (!affiliate) {
+      return NextResponse.json({ error: 'Affiliate not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, affiliate });
   } catch (error) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
