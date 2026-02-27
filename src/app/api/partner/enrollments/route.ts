@@ -5,7 +5,8 @@ import Affiliate from '@/models/Affiliate';
 import Enrollment from '@/models/Enrollment';
 
 async function getPartner(req: NextRequest) {
-  const email = req.headers.get('x-partner-email') || 'liam.j@example.com';
+  const email = req.headers.get('x-partner-email');
+  if (!email) return null;
   return Affiliate.findOne({ email });
 }
 

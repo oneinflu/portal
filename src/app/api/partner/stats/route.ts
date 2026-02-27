@@ -6,11 +6,9 @@ import Enrollment from '@/models/Enrollment';
 import Transaction from '@/models/Transaction';
 
 async function getPartner(req: NextRequest) {
-  // For demo, we'll use a hardcoded email if no header is present
-  // In a real app, this would come from the session/token
-  const email = req.headers.get('x-partner-email') || 'liam.j@example.com';
-  const partner = await Affiliate.findOne({ email });
-  return partner;
+  const email = req.headers.get('x-partner-email');
+  if (!email) return null;
+  return Affiliate.findOne({ email });
 }
 
 export async function GET(req: NextRequest) {

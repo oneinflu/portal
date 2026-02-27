@@ -5,8 +5,10 @@ import Affiliate from '@/models/Affiliate';
 import Transaction from '@/models/Transaction';
 
 async function getPartner(req: NextRequest) {
-  const email = req.headers.get('x-partner-email') || 'liam.j@example.com';
-  return Affiliate.findOne({ email });
+  const email = req.headers.get('x-partner-email');
+  if (!email) return null;
+  const partner = await Affiliate.findOne({ email });
+  return partner;
 }
 
 export async function GET(req: NextRequest) {

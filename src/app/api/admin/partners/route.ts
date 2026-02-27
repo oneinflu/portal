@@ -45,7 +45,7 @@ export async function GET() {
         payoutBalance: stat.payoutBalance,
         totalPaid: stat.totalPaid,
         acceptedTerms: affiliate.status === 'Accepted',
-        joinedDate: affiliate.joined,
+        joined: affiliate.joined,
       };
     });
 
